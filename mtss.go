@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -69,7 +70,10 @@ func (c *client) GetMtssJobs(ctx context.Context) ([]Mtss, error) {
 // standard error otherwise.
 func (c *client) dumpResponse(resp *http.Response) {
 	// ignore errors dumping response - no recovery from this
-	responseDump, _ := httputil.DumpResponse(resp, true)
+	responseDump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Fatalf("dumpResponse: " + err.Error())
+	}
 	fmt.Fprintln(c.debug, string(responseDump))
 	fmt.Fprintln(c.debug)
 }
@@ -87,6 +91,7 @@ func (c *client) apiCall(
 		return 0, "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
 	req.Header.Add("content-type", "application/json")
+	req.Header.Set("User-Agent", "mtssgo-client/0.0")
 	if c.debug != nil {
 		requestDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
