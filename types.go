@@ -64,6 +64,17 @@ func (mt *Mtss) ToMAP() (toHashMap map[string]interface{}, err error) {
 
 	return toHashMap, nil
 }
+func (mt *Mtss) MarshalBinary() ([]byte, error) {
+	return json.Marshal(mt)
+}
+
+func (mt *Mtss) UnmarshalBinary(data []byte) error {
+	if err := json.Unmarshal(data, &mt); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // const
 
