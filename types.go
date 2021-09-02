@@ -64,3 +64,12 @@ func (mt *Mtss) ToMAP() (toHashMap map[string]interface{}, err error) {
 
 	return toHashMap, nil
 }
+
+// const
+
+const (
+	// OFFERS are the path that show all jobs on the API
+	OFFERS = "necesidades"
+	// URL_BASE are the url for the jobs endpoints
+	URL_BASE = "https://apiempleo.xutil.net/apiempleo"
+)
