@@ -21,7 +21,7 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	for _, v := range jobs[:2] {
-		fmt.Println(v.Company)
+	for _, v := range jobs[:1] {
+		fmt.Printf("%+v", v)
 	}
 }

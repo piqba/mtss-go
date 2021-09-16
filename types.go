@@ -7,6 +7,13 @@ import (
 	"net/http"
 )
 
+const (
+	// OFFERS are the path that show all jobs on the API
+	OFFERS = "necesidades"
+	// URL_BASE are the url for the jobs endpoints
+	URL_BASE = "https://apiempleo.xutil.net/apiempleo"
+)
+
 // Client is an interface that implements Mtss's API
 type Client interface {
 	// GetMtssJobs returns the corresponding jobs on fetch call, or an error.
@@ -75,12 +82,3 @@ func (mt *Mtss) UnmarshalBinary(data []byte) error {
 
 	return nil
 }
-
-// const
-
-const (
-	// OFFERS are the path that show all jobs on the API
-	OFFERS = "necesidades"
-	// URL_BASE are the url for the jobs endpoints
-	URL_BASE = "https://apiempleo.xutil.net/apiempleo"
-)
