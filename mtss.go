@@ -1,51 +1,63 @@
-package mtssgo
+package mtss
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 
 	"github.com/piqba/mtss-go/pkg/errors"
 )
 
-func NewClient(
-	// mtss API's base url
-	baseURL string,
-	// skipVerify
-	skipVerify bool,
-	//optional, defaults to http.DefaultClient
-	httpClient *http.Client,
-	debug io.Writer,
-) Client {
-
-	c := &client{
-		url:        baseURL,
-		httpClient: httpClient,
-		debug:      debug,
-	}
-	if httpClient != nil {
-		c.httpClient = httpClient
-	} else {
-		c.httpClient = http.DefaultClient
-	}
-	if skipVerify {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		c.httpClient.Transport = tr
-	}
-	return c
+// Mtss represents a object for Job from Mtss source
+type Mtss struct {
+	ID            int     `json:"id"`
+	Company       string  `json:"organismo"`
+	Position      string  `json:"cargo"`
+	Taken         int     `json:"cantidad"`
+	Entity        string  `json:"entidad"`
+	Province      string  `json:"provincia"`
+	Municipality  string  `json:"municipio"`
+	Availability  int     `json:"ocupadas"`
+	Activity      string  `json:"actividad"`
+	Pay           float32 `json:"salario"`
+	SchoolLevel   string  `json:"nivelEscolar"`
+	Details       string  `json:"observaciones"`
+	EntityMail    string  `json:"correo_entidad"`
+	EntityAddress string  `json:"direccion_entidad"`
+	EntityPhone   string  `json:"telefono_entidad"`
+	RegisterDate  string  `json:"fecha_registro"`
+	UniqueStamp   string  `json:"unique_stamp"`
+	Enabled       bool    `json:"habilitada"`
+	Source        string  `json:"source"`
+	TypeWork      string  `json:"type_work"`
 }
 
-func (c *client) GetMtssJobs(ctx context.Context) ([]Mtss, error) {
+// ToMAP conver this struct to a simple map
+func (mt *Mtss) ToMAP() (toHashMap map[string]interface{}, err error) {
+
+	fromStruct, err := json.Marshal(mt)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(fromStruct, &toHashMap); err != nil {
+		return toHashMap, err
+	}
+
+	return toHashMap, nil
+}
+func (mt *Mtss) MarshalBinary() ([]byte, error) {
+	return json.Marshal(mt)
+}
+
+func (mt *Mtss) UnmarshalBinary(data []byte) error {
+	if err := json.Unmarshal(data, &mt); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (c *client) MtssJobs(ctx context.Context) ([]Mtss, error) {
 	status, res, err := c.apiCall(
 		ctx,
 		http.MethodGet,
@@ -64,54 +76,4 @@ func (c *client) GetMtssJobs(ctx context.Context) ([]Mtss, error) {
 		return nil, errors.Errorf("mtss/clientHttp: decoding error for data %s: %v", res, err)
 	}
 	return result, nil
-}
-
-// dumpResponse writes the raw response data to the debug output, if set, or
-// standard error otherwise.
-func (c *client) dumpResponse(resp *http.Response) {
-	// ignore errors dumping response - no recovery from this
-	responseDump, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		log.Fatalf("mtss/clientHttp: dumpResponse: " + err.Error())
-	}
-	fmt.Fprintln(c.debug, string(responseDump))
-	fmt.Fprintln(c.debug)
-}
-
-// apiCall define how you can make a call to Mtss API
-func (c *client) apiCall(
-	ctx context.Context,
-	method string,
-	URL string,
-	data []byte,
-) (statusCode int, response string, err error) {
-	requestURL := c.url + "/" + URL
-	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(data))
-	if err != nil {
-		return 0, "", fmt.Errorf("mtss/clientHttp: failed to create HTTP request: %v", err)
-	}
-	req.Header.Add("content-type", "application/json")
-	req.Header.Set("User-Agent", "mtssgo-client/0.0")
-	if c.debug != nil {
-		requestDump, err := httputil.DumpRequestOut(req, true)
-		if err != nil {
-			return 0, "", errors.Errorf("mtss/clientHttp: error dumping HTTP request: %v", err)
-		}
-		fmt.Fprintln(c.debug, string(requestDump))
-		fmt.Fprintln(c.debug)
-	}
-	req = req.WithContext(ctx)
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return 0, "", errors.Errorf("mtss/clientHttp: HTTP request failed with: %v", err)
-	}
-	defer resp.Body.Close()
-	if c.debug != nil {
-		c.dumpResponse(resp)
-	}
-	res, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return resp.StatusCode, "", errors.Errorf("mtss/clientHttp: HTTP request failed: %v", err)
-	}
-	return resp.StatusCode, string(res), nil
 }
